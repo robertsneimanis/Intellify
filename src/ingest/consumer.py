@@ -9,12 +9,12 @@ consumer reconnects with exponential backoff.
 
 import logging
 import threading
-from collections.abc import Mapping
 
 import pika
 import pika.exceptions
 import psycopg
 
+from ingest import devices, storage
 from ingest.config import Config
 from ingest.pipeline import Pipeline
 
@@ -24,13 +24,10 @@ MAX_BACKOFF = 60
 
 
 class VhostConsumer(threading.Thread):
-    def __init__(
-        self, vhost: str, config: Config, metric_ids: Mapping[str, int], stop: threading.Event
-    ) -> None:
+    def __init__(self, vhost: str, config: Config, stop: threading.Event) -> None:
         super().__init__(name=f"consumer-{vhost}", daemon=True)
         self.vhost = vhost
         self.config = config
-        self.metric_ids = metric_ids
         self.stop = stop
         self.backoff = 1
 
@@ -54,7 +51,8 @@ class VhostConsumer(threading.Thread):
             client_properties={"connection_name": f"ingest-{self.vhost}"},
         )
         with psycopg.connect(cfg.database_url, autocommit=True) as db:
-            pipeline = Pipeline(db, self.metric_ids)
+            # Re-synced on every connect: ids cached across a DB restore would be stale.
+            pipeline = Pipeline(db, storage.sync_metrics(db, devices.catalog().values()))
             connection = pika.BlockingConnection(params)
             try:
                 channel = connection.channel()

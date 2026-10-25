@@ -30,7 +30,7 @@ def main() -> None:
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: stop.set())
 
-    metric_ids = _with_retry(stop, _sync_metrics, config)
+    _with_retry(stop, _sync_metrics, config)  # fail fast on a broken catalog
     consumers: dict[str, VhostConsumer] = {}
     while not stop.is_set():
         try:
@@ -43,7 +43,7 @@ def main() -> None:
             log.warning("no tenants configured; add one with `python -m ingest.admin add-tenant`")
         for vhost in vhosts:
             if vhost not in consumers or not consumers[vhost].is_alive():
-                consumers[vhost] = VhostConsumer(vhost, config, metric_ids, stop)
+                consumers[vhost] = VhostConsumer(vhost, config, stop)
                 consumers[vhost].start()
         stop.wait(config.tenant_refresh_seconds)
 
