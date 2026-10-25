@@ -32,3 +32,20 @@ class ParsedMessage:
     readings: list[Reading] = field(default_factory=list)
     # Non-fatal problems (e.g. skipped null values); the message is still stored.
     warnings: list[str] = field(default_factory=list)
+
+
+@dataclass
+class Measurement:
+    """A reading with its meaning attached, ready to store."""
+
+    metric_key: str
+    channel: str
+    ts: datetime
+    value: float | bool | str  # scaled to the metric's unit
+    source_field: str
+    # Reasons the value is implausible; non-empty means quality 'suspect'.
+    issues: list[str] = field(default_factory=list)
+
+    @property
+    def series(self) -> tuple[str, str]:
+        return self.metric_key, self.channel

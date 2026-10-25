@@ -92,12 +92,15 @@ CREATE TABLE raw_messages (
 
 CREATE INDEX raw_messages_status_idx ON raw_messages (status, received_at);
 
--- Narrow measurement table: one value per (device, metric, timestamp).
+-- Narrow measurement table: one value per (device, metric, channel, timestamp).
 -- The primary key drops duplicates (INSERT ... ON CONFLICT DO NOTHING) and
 -- serves "latest value" lookups for chronology and counter checks.
 CREATE TABLE measurements (
     device_id      integer NOT NULL REFERENCES devices (id),
     metric_id      integer NOT NULL REFERENCES metrics (id),
+    -- Which of several identical inputs on one device, e.g. meter 'Sk1',
+    -- probe '2', room '1'. Empty when the device has only one.
+    channel        text NOT NULL DEFAULT '',
     ts             timestamptz NOT NULL,       -- when the reading was taken (UTC)
     value_num      double precision,           -- already scaled to metrics.unit
     value_bool     boolean,
@@ -106,7 +109,7 @@ CREATE TABLE measurements (
     quality_reason text,                       -- why it is suspect, e.g. 'out_of_range'
     source_field   text NOT NULL,              -- original payload key / column name
     raw_message_id bigint NOT NULL REFERENCES raw_messages (id),
-    PRIMARY KEY (device_id, metric_id, ts),
+    PRIMARY KEY (device_id, metric_id, channel, ts),
     CHECK (num_nonnulls(value_num, value_bool, value_text) = 1),
     CHECK ((quality = 'suspect') = (quality_reason IS NOT NULL))
 );
@@ -121,6 +124,7 @@ SELECT t.vhost        AS tenant,
        d.model,
        d.device_type,
        m.key          AS metric,
+       me.channel,
        m.description,
        m.unit,
        me.ts,
