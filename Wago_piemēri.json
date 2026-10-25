@@ -1,0 +1,178 @@
+{
+    "Lib_version": "v1.2",
+    "name": "SK1-P14",
+    "manufacturer": "Schneider",
+    "model": "iEM3250",
+    "type": "Electric meters",
+    "slave_id": 1,
+    "DPS": [{
+            "SN": 23516044,
+            "reg_nr": 129,
+            "ts": "DT#2025-06-30-12:26:04"
+        }, {
+            "Curr_avg": 0.591,
+            "reg_nr": 3009,
+            "ts": "DT#2025-06-30-12:26:05"
+        }, {
+            "Curr_fr": 49.993,
+            "reg_nr": 3109,
+            "ts": "DT#2025-06-30-12:26:05"
+        }, {
+            "TAP": 0.232,
+            "reg_nr": 3059,
+            "ts": "DT#2025-06-30-12:26:06"
+        }, {
+            "TEI": 1396.749,
+            "reg_nr": 45099,
+            "ts": "DT#2025-06-30-12:26:06"
+        }, {
+            "LL_avg": 402.601,
+            "reg_nr": 3025,
+            "ts": "DT#2025-06-30-12:26:06"
+        }
+    ]
+}
+
+ ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  #
+{
+    "Lib_version": "v1.2",
+    "name": "TP_wago",
+    "manufacturer": "WAGO",
+    "model": "751-9301",
+    "serial": "37SUN31564010260470190+0000000002428588",
+    "type": "PLC",
+    "DPS": [{
+            "max strava": 931.821,
+            "ts": "DT#2025-06-30-12:12:47"
+        }, {
+            "TP1_temp": 26.8,
+            "ts": "DT#2025-06-30-12:12:47"
+        }, {
+            "TP2_temp": 30.5,
+            "ts": "DT#2025-06-30-12:12:47"
+        }, {
+            "Alarm_TP1": 0,
+            "ts": "DT#2025-06-30-12:12:47"
+        }, {
+            "Alarm_TP2": 0,
+            "ts": "DT#2025-06-30-12:12:47"
+        }
+    ]
+}
+
+ ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  #
+{
+    "Lib_version": "v1.2",
+    "name": "PN_4",
+    "manufacturer": "Corrigo",
+    "model": "E_G3",
+    "serial": "012110194059",
+    "type": "AHU",
+    "slave_id": 1,
+    "DPS": [{
+            "UnitRunMode": 2,
+            "reg_nr": 283,
+            "ts": "DT#2025-06-30-12:19:47"
+        }, {
+            "RunMode": 5,
+            "reg_nr": 2,
+            "ts": "DT#2025-06-30-12:19:47"
+        }, {
+            "Temp_SupplyAir": 201,
+            "reg_nr": 6,
+            "ts": "DT#2025-06-30-12:19:48"
+        }, {
+            "Temp_ExtractAir": 0,
+            "reg_nr": 8,
+            "ts": "DT#2025-06-30-12:19:48"
+        }, {
+            "Temp_Room1": 0,
+            "reg_nr": 9,
+            "ts": "DT#2025-06-30-12:19:49"
+        }, {
+            "Temp_Room2": 0,
+            "reg_nr": 10,
+            "ts": "DT#2025-06-30-12:19:49"
+        }, {
+            "CO2_Level": 0,
+            "reg_nr": 16,
+            "ts": "DT#2025-06-30-12:19:49"
+        }, {
+            "Humidity_Duct": 0,
+            "reg_nr": 23,
+            "ts": "DT#2025-06-30-12:19:50"
+        }, {
+            "Humidity_Room": 0,
+            "reg_nr": 22,
+            "ts": "DT#2025-06-30-12:19:50"
+        }, {
+            "Setpoint_SupplyAirTemp": 200,
+            "reg_nr": 0,
+            "ts": "DT#2025-06-30-12:19:51"
+        }, {
+            "Setpoint_CO2": 3,
+            "reg_nr": 31,
+            "ts": "DT#2025-06-30-12:19:51"
+        }, {
+            "Setpoint_Humidity": 500,
+            "reg_nr": 36,
+            "ts": "DT#2025-06-30-12:19:51"
+        }, {
+            "Control_Mode": 3,
+            "reg_nr": 367,
+            "ts": "DT#2025-06-30-12:19:52"
+        }, {
+            "Setpoint_SuppECO": 300,
+            "reg_nr": 424,
+            "ts": "DT#2025-06-30-12:19:52"
+        }, {
+            "Setpoint_SuppNormal": 400,
+            "reg_nr": 423,
+            "ts": "DT#2025-06-30-12:19:53"
+        }, {
+            "Setpoint_ExhEco": 300,
+            "reg_nr": 426,
+            "ts": "DT#2025-06-30-12:19:53"
+        }, {
+            "Setpoint_ExhNormal": 400,
+            "reg_nr": 425,
+            "ts": "DT#2025-06-30-12:19:53"
+        }, {
+            "Alarm_Frost": 0,
+            "reg_nr": 40,
+            "ts": "DT#2025-06-30-12:19:54"
+        }, {
+            "Alarm_Fire": 0,
+            "reg_nr": 42,
+            "ts": "DT#2025-06-30-12:19:54"
+        }, {
+            "Alarm_Overheated": 0,
+            "reg_nr": 55,
+            "ts": "DT#2025-06-30-12:19:55"
+        }, {
+            "Alarm_SupplyFan": 0,
+            "reg_nr": 33,
+            "ts": "DT#2025-06-30-12:19:55"
+        }, {
+            "Alarm_ExtractFan": 0,
+            "reg_nr": 34,
+            "ts": "DT#2025-06-30-12:19:55"
+        }, {
+            "Alarm_Heater": 0,
+            "reg_nr": 35,
+            "ts": "DT#2025-06-30-12:19:56"
+        }, {
+            "Alarm_Cooler": 0,
+            "reg_nr": 36,
+            "ts": "DT#2025-06-30-12:19:56"
+        }, {
+            "Alarm_Exchanger": 0,
+            "reg_nr": 37,
+            "ts": "DT#2025-06-30-12:19:57"
+        }, {
+            "Alarm_AckById": 255,
+            "reg_nr": 399,
+            "ts": "DT#2025-06-30-12:19:57"
+        }
+    ]
+}

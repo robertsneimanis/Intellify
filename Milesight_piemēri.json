@@ -1,0 +1,78 @@
+ ##  ##  ##  ##  ## AM103 ##  ##  ##  ##  ##  ##  ##  ## 
+ 
+{
+    "battery": 44,
+    "co2": 512,
+    "devEUI": "24e124725d021011",
+    "humidity": 48,
+    "temperature": 22.1,
+    "time": "2025-06-30T12:32:42.315022Z"
+}
+
+ ##  ##  ##  ##  ## UC300 ##  ##  ##  ##  ##  ##  ##  ## {
+    "OstasSkati_cold_side": 2480,
+    "OstasSkati_current_flow": 0,
+    "OstasSkati_current_power": 0,
+    "OstasSkati_energy": 1429938,
+    "OstasSkati_hot_side": 2460,
+    "OstasSkati_temp_diff": -20,
+    "adv_1": 0,
+    "devEUI": "24e124445d226973",
+    "gpio_in_1": "off",
+    "gpio_in_2": "off",
+    "gpio_in_3": "off",
+    "gpio_in_4": "off",
+    "gpio_out_1": "off",
+    "gpio_out_2": "off",
+    "pt100_1": 12.2,
+    "pt100_2": 12.1,
+    "time": "2025-06-30T12:33:10.709277Z"
+}
+
+ ##  ##  ##  ##  ##  ##  Vicki  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##
+ 
+{
+    "applicationID": 5,
+    "attachedBackplate": true,
+    "batteryVoltage": 3.3,
+    "brokenSensor": false,
+    "calibrationFailed": false,
+    "childLock": 1,
+    "devEUI": "70b3d52dd301015d",
+    "deviceName": "Vicki-VWMT",
+    "highMotorConsumption": false,
+    "lowMotorConsumption": false,
+    "motorPosition": 6,
+    "motorRange": 515,
+    "newVersion": true,
+    "openProcentage": 98.83495145631068,
+    "openWindow": false,
+    "perceiveAsOnline": true,
+    "relativeHumidity": 50,
+    "sensorTemperature": 23.588263633251334,
+    "targetTemperature": 24,
+    "time": "2025-06-30T12:33:01.634324Z"
+}
+
+
+#####################################################
+##   Zenner ūdens skaitītājs sūta ik pa 3h, kur hour norāda kurā stunda, teiksim 11:00 ir vienkārši  11
+#####################################################
+
+{
+    "devEUI": "04b6480450052428",
+    "device": "ZennerSP12",
+    "ok": true,
+    "time": "2025-06-30T09:19:46.242854Z",
+    "volumes": [{
+            "hour": 10,
+            "val": 1024346
+        }, {
+            "hour": 11,
+            "val": 1024492
+        }, {
+            "hour": 12,
+            "val": 1024673
+        }
+    ]
+}

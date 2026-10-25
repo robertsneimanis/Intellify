@@ -1,0 +1,102 @@
+================================================================================
+TEHNISKAIS UZDEVUMS: IEKĀRTU DATU APSTRĀDE CAUR MQTT PROTOKOLU
+================================================================================
+
+
+1. SITUĀCIJAS APRAKSTS
+--------------------------------------------------------------------------------
+
+Iekārtas nosūta telemetrijas datus, izmantojot MQTT protokolu. Saņemtie dati ir
+jāapstrādā un jāuzglabā PostgreSQL datubāzē. Apstrādes laikā jānovērtē datu
+kvalitāte un ticamība, jo šie dati tiks izmantoti vizualizācijai, monitorēšanai
+un citiem automatizācijas procesiem.
+
+Iekārtu tipi, no kuriem ienāk dati, ietver:
+
+  •  Vides sensori (CO₂, temperatūra, mitrums),
+  •  Skaitītāji (elektrības, ūdens u.c. patēriņš),
+  •  Klimata uzturēšanas iekārtas (kondicionieri, katli, ventilācijas sistēmas),
+       ◦  Šīm iekārtām ir specifiski darbības parametri (piem., statuss:
+          ieslēgta/izslēgta, kļūda, režīms, ātrums u.c.).
+
+Svarīgi skaidri definēt, ko katrs datu punkts pārstāv, lai izvairītos no
+interpretācijas kļūdām turpmākajos apstrādes un vizualizācijas posmos.
+
+
+2. UZDEVUMA MĒRĶI
+--------------------------------------------------------------------------------
+
+  1. Noteikt datu struktūru katram iekārtas tipam.
+  2. Izstrādāt risinājumu, kas:
+       ◦  nodrošina datu uztveršanu no MQTT,
+       ◦  pārbauda to kvalitāti,
+       ◦  saglabā strukturētā veidā datubāzē.
+  3. Ieviest drošības un izolācijas mehānismus, lai nodrošinātu datu nošķirtību
+     starp dažādiem klientiem un ēkām, kas izmanto vienu MQTT brokeri.
+
+
+3. TEHNISKĀS PRASĪBAS
+--------------------------------------------------------------------------------
+
+3.1. Programmatūras komponentes
+
+  •  RabbitMQ (ar MQTT atbalstu un datu izolāciju)
+  •  PostgreSQL
+  •  Python 3.12
+
+3.2. Uzstādīšanas un konfigurācijas uzdevumi
+
+  •  Uzstādīt un konfigurēt RabbitMQ brokeri, nodrošinot MQTT protokola
+     atbalstu un klientu datu nošķirtību (piemēram, izmantojot vides/virtuālos
+     hostus vai autentifikācijas mehānismus).
+  •  Izveidot PostgreSQL datubāzes struktūru ar tabulām, kas atbilst ienākošo
+     datu loģiskajai struktūrai.
+  •  Izstrādāt Python programmu (vai skriptus), kas:
+       ◦  abonē attiecīgos MQTT topikus,
+       ◦  nolasa datus,
+       ◦  pārbauda datu kvalitāti (piem., pilnīgums, diapazons, formāts),
+       ◦  ieraksta tos datubāzē.
+
+3.3. Papildu prasības
+
+  •  Skriptiem jādarbojas automātiski pēc servera palaišanas. Ieteicams
+     izmantot procesu pārvaldības rīku, piemēram, Process Manager 2 (PM2) vai
+     ekvivalentu.
+  •  Bonus iespējas:
+       ◦  Datu apmaiņā starp Python un RabbitMQ izmantots AMQP protokols, kas
+          nodrošina rindas mehānismu — ja skripts nav aktīvs, dati neizkrist no
+          plūsmas, bet tiks uzkrāti.
+       ◦  Kods ir modularizēts, kas atvieglo jaunu datu punktu vai iekārtu tipu
+          pievienošanu sistēmai.
+
+
+4. DATU KVALITĀTES KRITĒRIJI
+--------------------------------------------------------------------------------
+
+Jādefinē skaidri kritēriji, lai uzskatītu datus par derīgiem. Piemēram:
+
+  •  Datu vērtības ir saprātīgās robežās,
+  •  Laika zīmogi ir hronoloģiski secīgi un nepārklājas,
+  •  Datu formāts atbilst iepriekš definētajai shēmai,
+  •  Trūkst dublikātu vai neatļautu vērtību,
+  •  u.c.
+
+
+5. DROŠĪBAS UN IZOLĀCIJAS APSVĒRUMI
+--------------------------------------------------------------------------------
+
+  •  Uz vienu RabbitMQ brokeri datus sūtīs vairāki klienti (dažādas ēkas vai
+     organizācijas).
+  •  Nepieciešams nodrošināt:
+       ◦  Autentifikāciju katrai klientu grupai,
+       ◦  Datu plūsmas nodalīšanu (piem., izmantojot atsevišķus topic namespace
+          vai vhost),
+       ◦  Ierobežojumus, lai klienti nevarētu piekļūt viens otra datiem MQTT
+          līmenī.
+
+
+6. DATU PIEMĒRI
+--------------------------------------------------------------------------------
+
+Lai izstrādātu atbilstošu shēmu un validācijas loģiku, jāizmanto papildfailos
+pievienotie reālie datu piemēri.
