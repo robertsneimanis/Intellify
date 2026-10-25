@@ -1,0 +1,22 @@
+{
+  "applicationID": 5,
+  "attachedBackplate": true,
+  "batteryVoltage": 3.3,
+  "brokenSensor": false,
+  "calibrationFailed": false,
+  "childLock": 1,
+  "devEUI": "70b3d52dd301015d",
+  "deviceName": "Vicki-VWMT",
+  "highMotorConsumption": false,
+  "lowMotorConsumption": false,
+  "motorPosition": 6,
+  "motorRange": 515,
+  "newVersion": true,
+  "openProcentage": 98.83495145631068,
+  "openWindow": false,
+  "perceiveAsOnline": true,
+  "relativeHumidity": 50,
+  "sensorTemperature": 23.588263633251334,
+  "targetTemperature": 24,
+  "time": "2025-06-30T12:33:01.634324Z"
+}

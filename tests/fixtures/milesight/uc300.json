@@ -1,0 +1,19 @@
+{
+  "OstasSkati_cold_side": 2480,
+  "OstasSkati_current_flow": 0,
+  "OstasSkati_current_power": 0,
+  "OstasSkati_energy": 1429938,
+  "OstasSkati_hot_side": 2460,
+  "OstasSkati_temp_diff": -20,
+  "adv_1": 0,
+  "devEUI": "24e124445d226973",
+  "gpio_in_1": "off",
+  "gpio_in_2": "off",
+  "gpio_in_3": "off",
+  "gpio_in_4": "off",
+  "gpio_out_1": "off",
+  "gpio_out_2": "off",
+  "pt100_1": 12.2,
+  "pt100_2": 12.1,
+  "time": "2025-06-30T12:33:10.709277Z"
+}

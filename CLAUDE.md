@@ -26,7 +26,7 @@ Required components and constraints from the spec:
 
 ## Sample payload formats
 
-The sample files are **not valid JSON**. They are several JSON documents separated by `## ... ##` banner lines and comments. Split them before you load them as fixtures.
+The sample files are **not valid JSON**. They are several JSON documents separated by `## ... ##` banner lines and comments. `python scripts/split_samples.py` splits them into `tests/fixtures/<family>/*.json`, one valid document per file. Regenerate the fixtures with it rather than editing them by hand.
 
 There are three distinct payload families, and each needs its own parser:
 
@@ -34,7 +34,7 @@ There are three distinct payload families, and each needs its own parser:
    - AM103: environment sensor (`co2`, `temperature`, `humidity`, `battery`).
    - UC300: IO controller. Some keys carry a site prefix (`OstasSkati_*`) and some integer values look scaled (e.g. `hot_side: 2460`). `gpio_*` values are `"on"`/`"off"` strings.
    - Vicki: thermostatic radiator valve, with many boolean status/fault flags and `deviceName`.
-   - Zenner SP12: water meter that reports every 3h. `volumes` is an array of `{hour, val}`, where `hour` is just the hour of day (11 means 11:00). The full timestamp has to be rebuilt from the message `time`, including the day rollover across midnight. `val` is a cumulative counter.
+   - Zenner SP12: water meter that reports every 3h. `volumes` is an array of `{hour, val}`, where `hour` is just the hour of day (11 means 11:00). The full timestamp has to be rebuilt from the message `time`, including the day rollover across midnight. `hour` is in the building's **local** time, not UTC: the sample's `time` is 09:19Z (12:19 in Riga) and it reports hours 10–12. `val` is a cumulative counter.
 2. **Viltrus (`Viltrus_piemēri.json`)**: self-describing. `header.columns` maps numeric column IDs to `name`, `dataType` and `format`. `data[].f[id].v` holds the values, and each row has `ts`. Timestamps have **no timezone**. Device identity comes from `SN` and `name`. Parse by column ID through the header; don't hard-code names.
 3. **WAGO-library PLCs (`Wago_piemēri.json`)**: `Lib_version`, `name`, `manufacturer`, `model`, `type` (e.g. `Electric meters`, `PLC`, `AHU`), and optional `serial`/`slave_id`. `DPS` is a list where each item holds **one** arbitrary data-point key plus `ts` and optional `reg_nr` (Modbus register). Timestamps use the IEC format `DT#YYYY-MM-DD-HH:MM:SS` with no timezone. Data-point names can contain spaces (`"max strava"`). For the Corrigo AHU, values look ×10-scaled (`Temp_SupplyAir: 201`), and `0` probably means "sensor not connected" rather than a real reading. Confirm this before you treat it as valid data.
 
