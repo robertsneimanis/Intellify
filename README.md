@@ -124,10 +124,13 @@ python -m ingest.docgen           # regenerate the device tables in docs/data-mo
 
 The integration tests create and use a separate `telemetry_test` database.
 
-## Open questions
+## Assumptions
 
-These could not be confirmed from the samples. They are implemented as stated, and each is
-marked in [`docs/data-model.md`](docs/data-model.md).
+The samples and the available device information don't settle these points. They are
+deliberate, documented decisions, marked *(unit assumed)* or *(scale unknown)* in
+[`docs/data-model.md`](docs/data-model.md). If one turns out wrong, the fix is a change to the
+`divisor` or unit in one device module, followed by `python -m ingest.docgen`. Raw payloads are
+kept in `raw_messages`, so stored values can be recomputed.
 
 1. **UC300 heat meter** (`OstasSkati_*`): temperatures are ÷100. This is consistent with
    `temp_diff = hot_side − cold_side`. The units of `energy` (assumed kWh), `current_flow`

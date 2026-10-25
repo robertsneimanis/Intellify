@@ -53,7 +53,7 @@ Matching is case-insensitive where devices are inconsistent (Viltrus `Sk1` / `SK
 Values are stored as `raw ÷ scale`.
 
 Fields marked *(unit assumed)* or *(scale unknown)* could not be confirmed from the samples
-alone; see "Open questions" in the README.
+alone; see "Assumptions" in the README.
 
 <!-- generated:start -->
 

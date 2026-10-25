@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This is a technical assignment (in Latvian), spec in `Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`, sample payloads in `*_piemēri.json`. The full pipeline is built and was verified end to end against the docker-compose stack: MQTT publish, broker isolation, queueing while the service is down, a DB outage and recovery, and PM2 start/stop. `README.md` is the reviewer-facing overview and lists the open questions about device units and scales.
+This is a technical assignment (in Latvian), spec in `Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`, sample payloads in `*_piemēri.json`. The full pipeline is built and was verified end to end against the docker-compose stack: MQTT publish, broker isolation, queueing while the service is down, a DB outage and recovery, and PM2 start/stop. `README.md` is the reviewer-facing overview and lists the assumptions about device units and scales. The user has no further information on these (2026-10-25), so they are accepted as final unless new device documentation turns up.
 
 ## Commands
 
@@ -43,7 +43,7 @@ There are three distinct payload families, and each needs its own parser:
    - Vicki: thermostatic radiator valve, with many boolean status/fault flags and `deviceName`.
    - Zenner SP12: water meter that reports every 3h. `volumes` is an array of `{hour, val}`, where `hour` is just the hour of day (11 means 11:00). The full timestamp has to be rebuilt from the message `time`, including the day rollover across midnight. `hour` is in the building's **local** time, not UTC: the sample's `time` is 09:19Z (12:19 in Riga) and it reports hours 10–12. `val` is a cumulative counter.
 2. **Viltrus (`Viltrus_piemēri.json`)**: self-describing. `header.columns` maps numeric column IDs to `name`, `dataType` and `format`. `data[].f[id].v` holds the values, and each row has `ts`. Timestamps have **no timezone**. Device identity comes from `SN` and `name`. Parse by column ID through the header; don't hard-code names.
-3. **WAGO-library PLCs (`Wago_piemēri.json`)**: `Lib_version`, `name`, `manufacturer`, `model`, `type` (e.g. `Electric meters`, `PLC`, `AHU`), and optional `serial`/`slave_id`. `DPS` is a list where each item holds **one** arbitrary data-point key plus `ts` and optional `reg_nr` (Modbus register). Timestamps use the IEC format `DT#YYYY-MM-DD-HH:MM:SS` with no timezone. Data-point names can contain spaces (`"max strava"`). For the Corrigo AHU, values are treated as ×10-scaled (`Temp_SupplyAir: 201`), and a raw `0` on sensor inputs as "sensor not connected". This is still unconfirmed with the client; see the README open questions.
+3. **WAGO-library PLCs (`Wago_piemēri.json`)**: `Lib_version`, `name`, `manufacturer`, `model`, `type` (e.g. `Electric meters`, `PLC`, `AHU`), and optional `serial`/`slave_id`. `DPS` is a list where each item holds **one** arbitrary data-point key plus `ts` and optional `reg_nr` (Modbus register). Timestamps use the IEC format `DT#YYYY-MM-DD-HH:MM:SS` with no timezone. Data-point names can contain spaces (`"max strava"`). For the Corrigo AHU, values are treated as ×10-scaled (`Temp_SupplyAir: 201`), and a raw `0` on sensor inputs as "sensor not connected". This is an accepted assumption; see README "Assumptions".
 
 Field names mix Latvian and English. Keep the original names as source identifiers, and map them to clear canonical metric names and units.
 
