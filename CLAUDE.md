@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This is a technical assignment (in Latvian). No code exists yet. The repo holds only the spec (`Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`) and sample device payloads (`*_piemēri.json`). There are no build, lint or test commands yet. Add them here once the project has them.
+This is a technical assignment (in Latvian). The repo holds the spec (`Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`), sample device payloads (`*_piemēri.json`), the dev infrastructure (`docker-compose.yml`, `broker/`) and the initial DB schema (`db/migrations/001_init.sql`). No Python code exists yet. There are no build, lint or test commands yet. Add them here once the project has them.
+
+## Commands
+
+- `cp .env.example .env && docker compose up -d --wait`: starts RabbitMQ (AMQP 5672, MQTT 1883, management UI http://localhost:15672) and Postgres 17 (5432). Credentials come from `.env` and default to `admin/admin` and `ingest/ingest` with database `telemetry`.
+- SQL files in `db/migrations/` run automatically **only on first start** of an empty Postgres volume. To re-apply them, run `docker compose down -v`, which wipes all data. To apply a new file to a running DB: `docker compose exec -T postgres psql -U ingest -d telemetry -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/<file>.sql`.
+- The `metrics` catalog is not seeded by SQL. It is meant to be synced from the Python `devices/` modules at service start, so a new device stays a single new module.
+- `broker/rabbitmq.conf` is mounted as a `conf.d` drop-in. Anonymous MQTT is disabled, and MQTT publishes go to `amq.topic`.
 
 ## What is to be built
 
