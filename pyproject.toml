@@ -15,6 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
+    "paho-mqtt>=2.1",
     "ruff>=0.6",
 ]
 

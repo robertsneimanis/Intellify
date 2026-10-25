@@ -77,7 +77,8 @@ class Pipeline:
         message = parsers.parse(source_format, payload, tz)
         model = devices.resolve(source_format, message)
         outcome.errors.extend(message.warnings)
-        if topic_device.lower() != message.external_id.lower():
+        # The topic may carry the device id or its name (a serial can contain MQTT wildcards).
+        if topic_device.lower() not in {message.external_id.lower(), (message.name or "").lower()}:
             outcome.errors.append(
                 f"topic device id {topic_device!r} differs from payload id {message.external_id!r}"
             )

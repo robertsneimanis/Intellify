@@ -4,6 +4,7 @@
 services:
   rabbitmq:
     image: rabbitmq:4.1-management
+    restart: unless-stopped  # back up after a reboot
     hostname: rabbitmq  # fixed node name so data in the volume survives recreation
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_ADMIN_USER:-admin}
@@ -24,6 +25,7 @@ services:
 
   postgres:
     image: postgres:17
+    restart: unless-stopped  # back up after a reboot
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-telemetry}
       POSTGRES_USER: ${POSTGRES_USER:-ingest}
