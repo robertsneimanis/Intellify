@@ -58,6 +58,14 @@ class Broker:
                 f"{method} {'/'.join(path)}: {exc.code} {exc.read().decode()}"
             ) from exc
 
+    def delete(self, path: list[str]) -> None:
+        """Delete a resource; a missing one is fine."""
+        try:
+            self.call("DELETE", path)
+        except SystemExit as exc:
+            if " 404 " not in str(exc):
+                raise
+
     def user(self, name: str, password: str) -> None:
         self.call("PUT", ["users", name], {"password": password, "tags": ""})
 

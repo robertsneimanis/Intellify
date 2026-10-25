@@ -24,7 +24,8 @@ def main() -> None:
         level=os.environ.get("LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s",
     )
-    logging.getLogger("pika").setLevel(logging.WARNING)
+    # Connection failures are logged once by the consumer; pika would add full tracebacks.
+    logging.getLogger("pika").setLevel(logging.CRITICAL)
     config = Config.from_env()
     stop = threading.Event()
     for sig in (signal.SIGTERM, signal.SIGINT):

@@ -1,7 +1,17 @@
-# Dev environment: RabbitMQ (AMQP + MQTT) and PostgreSQL.
-# Usage: cp .env.example .env && docker compose up -d
+# RabbitMQ (AMQP + MQTT), PostgreSQL and the ingest service.
+# Usage: cp .env.example .env && docker compose up -d --build --wait
 
 services:
+  # One-shot: creates a dev CA and server certificate for MQTT over TLS if missing.
+  certs:
+    image: rabbitmq:4.1-management  # reused for its openssl binary
+    entrypoint: ["/bin/sh", "/gen-certs.sh", "/certs"]
+    environment:
+      EXTRA_SANS: ${MQTT_TLS_EXTRA_SANS:-}
+    volumes:
+      - ./broker/gen-certs.sh:/gen-certs.sh:ro
+      - ./broker/certs:/certs
+
   rabbitmq:
     image: rabbitmq:4.1-management
     restart: unless-stopped  # back up after a reboot
@@ -9,13 +19,19 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_ADMIN_USER:-admin}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_ADMIN_PASS:-admin}
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+    # Only MQTT over TLS is reachable from the network; the rest is for this host only.
     ports:
-      - "5672:5672"    # AMQP (ingest service)
-      - "1883:1883"    # MQTT (devices)
-      - "15672:15672"  # management UI
+      - "8883:8883"              # MQTT over TLS (devices)
+      - "127.0.0.1:1883:1883"    # plain MQTT, local testing only
+      - "127.0.0.1:5672:5672"    # AMQP (ingest service run outside Docker)
+      - "127.0.0.1:15672:15672"  # management UI and admin API
     volumes:
       - ./broker/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
       - ./broker/rabbitmq.conf:/etc/rabbitmq/conf.d/20-ingest.conf:ro
+      - ./broker/certs:/etc/rabbitmq/certs:ro
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
@@ -31,7 +47,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-ingest}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ingest}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       # Runs *.sql on first start only (empty data volume).
       - ./db/migrations:/docker-entrypoint-initdb.d:ro
@@ -41,6 +57,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # The ingest service itself. `restart: unless-stopped` brings it back after a
+  # crash and whenever Docker starts (e.g. on boot), so it doubles as the
+  # process manager; PM2 / systemd are alternatives for running it outside Docker.
+  ingest:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ingest}:${POSTGRES_PASSWORD:-ingest}@postgres:5432/${POSTGRES_DB:-telemetry}
+      AMQP_HOST: rabbitmq
+      AMQP_USER: ${AMQP_USER:-ingest}
+      AMQP_PASSWORD: ${AMQP_PASSWORD:-ingest}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    stop_grace_period: 20s
 
 volumes:
   rabbitmq-data:

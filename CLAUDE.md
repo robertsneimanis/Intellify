@@ -4,20 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This is a technical assignment (in Latvian), spec in `Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`, sample payloads in `*_piemēri.json`. The full pipeline is built and was verified end to end against the docker-compose stack: MQTT publish, broker isolation, queueing while the service is down, a DB outage and recovery, and PM2 start/stop. `README.md` is the reviewer-facing overview and lists the assumptions about device units and scales. The user has no further information on these (2026-10-25), so they are accepted as final unless new device documentation turns up.
+This is a technical assignment (in Latvian), spec in `Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`, sample payloads in `*_piemēri.json`. The full pipeline is built and was verified end to end against the docker-compose stack: MQTT publish, broker isolation, queueing while the service is down, a DB outage and recovery, PM2 `resurrect`, Docker restart-on-exit, and a Docker Desktop restart (the stack came back by itself). systemd is untested because the dev machine is macOS. `README.md` is the reviewer-facing overview and lists the assumptions about device units and scales. The user has no further information on these (2026-10-25), so they are accepted as final unless new device documentation turns up.
 
 ## Commands
 
 - `python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev]'`: sets up the dev environment.
 - `.venv/bin/pytest`: runs the tests. Run a single one with `.venv/bin/pytest tests/parsers/test_wago.py::test_electric_meter`.
 - `.venv/bin/ruff check . && .venv/bin/ruff format --check .`: lint and format check.
-- `cp .env.example .env && docker compose up -d --wait`: starts RabbitMQ (AMQP 5672, MQTT 1883, management UI http://localhost:15672) and Postgres 17 (5432). Credentials come from `.env` and default to `admin/admin` and `ingest/ingest` with database `telemetry`.
+- `cp .env.example .env && docker compose up -d --build --wait`: starts the `certs` one-shot (dev TLS CA into `broker/certs/`, gitignored), RabbitMQ (MQTT/TLS 8883 public; MQTT 1883, AMQP 5672, UI http://localhost:15672 bound to 127.0.0.1), Postgres 17 (127.0.0.1:5432) and the `ingest` service container (`restart: unless-stopped`, the default auto-start mechanism). Credentials come from `.env` and default to `admin/admin` and `ingest/ingest` with database `telemetry`. Rebuild the `ingest` image after code changes (`--build`). Stop the container (`docker compose stop ingest`) when running the service locally, otherwise both compete for the queue.
 - SQL files in `db/migrations/` run automatically **only on first start** of an empty Postgres volume. To re-apply them, run `docker compose down -v`, which wipes all data. To apply a new file to a running DB: `docker compose exec -T postgres psql -U ingest -d telemetry -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/<file>.sql`.
 - The `metrics` catalog is not seeded by SQL. It is synced from the `devices/` modules at service start.
-- `.venv/bin/python -m ingest`: runs the service. `.venv/bin/python -m ingest.admin {init,add-tenant,add-building}` provisions the broker and the DB. It needs `AMQP_PASSWORD` and the `RABBITMQ_*` env vars (defaults match `.env.example`).
-- `.venv/bin/python scripts/publish_samples.py --username demo:demo-ostas-skati --password ... --building ostas-skati [fixture ...]`: publishes fixtures over MQTT.
+- `.venv/bin/python -m ingest`: runs the service locally. `.venv/bin/python -m ingest.admin {init,add-tenant,add-building}` provisions the broker and the DB. `reprocess` re-runs rejected raw messages, and `rebuild` deletes all measurements and re-runs every raw message in id order (stop the service first). It needs `AMQP_PASSWORD` and the `RABBITMQ_*` env vars (defaults match `.env.example`).
+- `.venv/bin/python scripts/publish_samples.py [--tls] --username demo:demo-ostas-skati --password ... --building ostas-skati [fixture ...]`: publishes fixtures over MQTT. `--tls` uses port 8883 and `broker/certs/ca.pem`.
 - `.venv/bin/python -m ingest.docgen`: regenerates the device tables in `docs/data-model.md`. `tests/test_docs.py` fails when they are stale, so rerun it after changing any device module.
-- The integration tests (`tests/integration/`) need the compose Postgres running. They recreate a `telemetry_test` database and skip when Postgres is unreachable.
+- The integration tests (`tests/integration/`) need the compose stack running. They recreate a `telemetry_test` database and skip when Postgres is unreachable. `test_broker.py` provisions throwaway `isotest-a`/`isotest-b` vhosts on the real broker, checks isolation over MQTT, and deletes them afterwards.
 - `broker/rabbitmq.conf` is mounted as a `conf.d` drop-in. Anonymous MQTT is disabled, and MQTT publishes go to `amq.topic`.
 
 ## What the spec requires
@@ -59,7 +59,7 @@ Field names mix Latvian and English. Keep the original names as source identifie
   - `parsers/` has one module per payload family. `devices/` has one module per device model and is auto-discovered (any module with `MODEL`). Shared metrics live in `devices/metrics.py`.
   - `validation.py` holds the plausibility checks, `storage.py` the SQL, `config.py` the env settings, `admin.py` the provisioning CLI and `docgen.py` the docs generator.
 - `docs/data-model.md` (device tables generated) and `docs/quality-criteria.md` (hand-written, keep in sync with `validation.py`).
-- `ecosystem.config.js` (PM2, which reads `.env`) and `deploy/intellify-ingest.service` (systemd) handle auto-start.
+- Auto-start: the `ingest` compose service (Dockerfile) by default. `ecosystem.config.js` (PM2, which reads `.env`) and `deploy/intellify-ingest.service` (systemd) are for running it outside Docker. On macOS the PM2 process is named `Python` (capital P): match it with `pgrep -f "Python -m ingest"`.
 
 Parsers understand a wire format, and device modules define what fields *mean*. A parser has the signature `parse(payload, tz) -> ParsedMessage` (see `src/ingest/model.py`). It returns raw `Reading`s with timezone-aware timestamps and unscaled values, and raises `ParseError` to reject the whole message. Non-fatal problems go in `ParsedMessage.warnings`. Keep the two separate: a new device on an existing format should only need a new `devices/` module.
 

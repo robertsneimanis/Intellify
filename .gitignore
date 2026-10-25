@@ -25,3 +25,6 @@ build/
 # Runtime
 *.log
 logs/
+
+# Generated TLS certificates (broker/gen-certs.sh)
+broker/certs/

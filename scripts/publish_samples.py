@@ -30,7 +30,9 @@ def device_id(source_format: str, payload: dict) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--host", default="localhost")
-    parser.add_argument("--port", type=int, default=1883)
+    parser.add_argument("--port", type=int, help="default: 8883 with --tls, else 1883")
+    parser.add_argument("--tls", action="store_true", help="connect with TLS")
+    parser.add_argument("--cafile", default="broker/certs/ca.pem", help="CA to verify the broker")
     parser.add_argument("--username", required=True)
     parser.add_argument("--password", required=True)
     parser.add_argument("--building", required=True)
@@ -45,7 +47,9 @@ def main() -> int:
     acks: dict[int, int] = {}  # message id -> PUBACK reason code (>= 128 is a refusal)
     client.on_publish = lambda _c, _u, mid, reason, _p: acks.__setitem__(mid, reason.value)
     try:
-        client.connect(args.host, args.port)
+        if args.tls:
+            client.tls_set(ca_certs=args.cafile)
+        client.connect(args.host, args.port or (8883 if args.tls else 1883))
     except OSError as exc:
         print(f"cannot connect: {exc}", file=sys.stderr)
         return 1
