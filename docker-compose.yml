@@ -1,0 +1,45 @@
+# Dev environment: RabbitMQ (AMQP + MQTT) and PostgreSQL.
+# Usage: cp .env.example .env && docker compose up -d
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    hostname: rabbitmq  # fixed node name so data in the volume survives recreation
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_ADMIN_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_ADMIN_PASS:-admin}
+    ports:
+      - "5672:5672"    # AMQP (ingest service)
+      - "1883:1883"    # MQTT (devices)
+      - "15672:15672"  # management UI
+    volumes:
+      - ./broker/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./broker/rabbitmq.conf:/etc/rabbitmq/conf.d/20-ingest.conf:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-telemetry}
+      POSTGRES_USER: ${POSTGRES_USER:-ingest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ingest}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Runs *.sql on first start only (empty data volume).
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rabbitmq-data:
+  postgres-data:
