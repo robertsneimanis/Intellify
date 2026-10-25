@@ -148,3 +148,44 @@ def test_rejection_rolls_back_partial_work(pipeline, conn, monkeypatch):
 
     assert outcome.status == "rejected" and "internal error" in outcome.errors[-1]
     assert rows(conn, "SELECT count(*) FROM devices") == [(0,)]
+
+
+def test_rejected_message_succeeds_after_fix(pipeline, conn):
+    first = pipeline.handle(
+        "demo", "annex.milesight.24e124725d021011", body("milesight/am103.json")
+    )
+    assert first.status == "rejected"
+    conn.execute(
+        "INSERT INTO buildings (tenant_id, slug, name) SELECT id, 'annex', 'Annex' FROM tenants"
+    )
+
+    again = pipeline.reprocess(first.raw_id)
+
+    assert (again.status, again.stored, again.errors) == ("processed", 4, [])
+    assert rows(conn, "SELECT status, errors FROM raw_messages") == [("processed", [])]
+
+
+def test_reprocess_replaces_instead_of_duplicating(pipeline, conn):
+    outcome = send(pipeline, "wago/ahu_e_g3.json")
+    conn.execute(
+        "UPDATE measurements SET value_num = -1 WHERE value_num IS NOT NULL"
+    )  # as if computed by an old mapping
+
+    again = pipeline.reprocess(outcome.raw_id)
+
+    assert again.stored == 26
+    assert rows(conn, "SELECT count(*), min(value_num) FROM measurements") == [(26, 0.0)]
+
+
+def test_reprocessing_in_order_keeps_quality_checks_consistent(pipeline, conn):
+    ids = [send(pipeline, name).raw_id for name in SAMPLES]
+    before = rows(conn, "SELECT count(*) FILTER (WHERE quality = 'suspect') FROM measurements")
+
+    conn.execute("DELETE FROM measurements")
+    for raw_id in ids:
+        pipeline.reprocess(raw_id)
+
+    assert rows(conn, "SELECT count(*) FROM measurements") == [(sum(SAMPLES.values()),)]
+    assert (
+        rows(conn, "SELECT count(*) FILTER (WHERE quality = 'suspect') FROM measurements") == before
+    )

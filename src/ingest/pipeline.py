@@ -51,20 +51,37 @@ class Pipeline:
         with self.conn.transaction():
             payload, text = _decode(body)
             raw_id = storage.insert_raw(self.conn, vhost, routing_key, payload, text)
-            outcome = Outcome(raw_id, "processed")
-            try:
-                with self.conn.transaction():  # savepoint: undo partial work on rejection
-                    if text is not None:
-                        raise Rejected("body is not valid UTF-8 JSON")
-                    self._process(vhost, routing_key, payload, outcome)
-            except (Rejected, ParseError, devices.UnknownDevice) as exc:
-                outcome = Outcome(raw_id, "rejected", errors=[*outcome.errors, str(exc)])
-            except psycopg.OperationalError:
-                raise
-            except Exception as exc:  # a bug must not block the queue; keep the message
-                log.exception("unexpected error processing raw message %s", raw_id)
-                outcome = Outcome(raw_id, "rejected", errors=[f"internal error: {exc!r}"])
-            storage.finish_raw(self.conn, raw_id, outcome.status, outcome.errors)
+            return self._run(raw_id, vhost, routing_key, payload, text)
+
+    def reprocess(self, raw_id: int) -> Outcome:
+        """Process a stored raw message again, replacing the measurements it produced.
+
+        Used after adding or fixing a device module. Messages should be
+        reprocessed in id order so chronology and counter checks see the
+        same history as the first time.
+        """
+        with self.conn.transaction():
+            vhost, routing_key, payload, text = storage.get_raw(self.conn, raw_id)
+            storage.delete_measurements_of(self.conn, raw_id)
+            return self._run(raw_id, vhost, routing_key, payload, text)
+
+    def _run(
+        self, raw_id: int, vhost: str, routing_key: str, payload: object, text: str | None
+    ) -> Outcome:
+        outcome = Outcome(raw_id, "processed")
+        try:
+            with self.conn.transaction():  # savepoint: undo partial work on rejection
+                if text is not None:
+                    raise Rejected("body is not valid UTF-8 JSON")
+                self._process(vhost, routing_key, payload, outcome)
+        except (Rejected, ParseError, devices.UnknownDevice) as exc:
+            outcome = Outcome(raw_id, "rejected", errors=[*outcome.errors, str(exc)])
+        except psycopg.OperationalError:
+            raise
+        except Exception as exc:  # a bug must not block the queue; keep the message
+            log.exception("unexpected error processing raw message %s", raw_id)
+            outcome = Outcome(raw_id, "rejected", errors=[f"internal error: {exc!r}"])
+        storage.finish_raw(self.conn, raw_id, outcome.status, outcome.errors)
         return outcome
 
     def _process(self, vhost: str, routing_key: str, payload: object, outcome: Outcome) -> None:

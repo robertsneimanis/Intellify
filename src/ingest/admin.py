@@ -3,6 +3,8 @@
     python -m ingest.admin init
     python -m ingest.admin add-tenant demo "Demo Ltd"
     python -m ingest.admin add-building demo ostas-skati "Ostas Skati" [--timezone Europe/Riga]
+    python -m ingest.admin reprocess [--status rejected]    # e.g. after adding a device module
+    python -m ingest.admin rebuild                          # after changing a mapping or scale
 
 Isolation model:
 - one RabbitMQ vhost per tenant; a tenant's users have no rights elsewhere;
@@ -28,7 +30,9 @@ import urllib.request
 
 import psycopg
 
+from ingest import devices, storage
 from ingest.config import Config
+from ingest.pipeline import Pipeline
 
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # no "." or "/": they are topic separators
 
@@ -136,6 +140,26 @@ def add_building(
     print(f"  publish to:    {slug}/<format>/<device_id>  (format: milesight | viltrus | wago)")
 
 
+def reprocess(config: Config, status: str | None, rebuild: bool = False) -> None:
+    """Run stored raw messages through the pipeline again, oldest first.
+
+    `rebuild` first deletes all measurements, so every value is recomputed
+    with the current device modules and the quality checks see a clean history.
+    Stop the service first, or newly arriving data may be judged out of order.
+    """
+    with psycopg.connect(config.database_url, autocommit=True) as conn:
+        pipeline = Pipeline(conn, storage.sync_metrics(conn, devices.catalog().values()))
+        if rebuild:
+            conn.execute("DELETE FROM measurements")
+        ids = storage.raw_ids(conn, None if rebuild else status)
+        counts: dict[str, int] = {}
+        for raw_id in ids:
+            outcome = pipeline.reprocess(raw_id)
+            counts[outcome.status] = counts.get(outcome.status, 0) + 1
+    summary = ", ".join(f"{n} {s}" for s, n in sorted(counts.items())) or "nothing to do"
+    print(f"reprocessed {len(ids)} messages: {summary}")
+
+
 def _check_slug(value: str) -> None:
     if not SLUG.match(value):
         raise SystemExit(f"{value!r} must be lowercase letters, digits and '-'")
@@ -156,6 +180,9 @@ def main(argv: list[str] | None = None) -> None:
     building.add_argument("name")
     building.add_argument("--timezone", default="Europe/Riga")
     building.add_argument("--password", help="MQTT password (generated if omitted)")
+    again = sub.add_parser("reprocess", help="reprocess stored messages (default: rejected ones)")
+    again.add_argument("--status", choices=["rejected", "processed", "all"], default="rejected")
+    sub.add_parser("rebuild", help="delete all measurements and reprocess every stored message")
     args = parser.parse_args(argv)
 
     config, broker = Config.from_env(), broker_from_env()
@@ -168,6 +195,10 @@ def main(argv: list[str] | None = None) -> None:
             add_building(
                 config, broker, args.vhost, args.slug, args.name, args.timezone, args.password
             )
+        case "reprocess":
+            reprocess(config, None if args.status == "all" else args.status)
+        case "rebuild":
+            reprocess(config, None, rebuild=True)
 
 
 if __name__ == "__main__":

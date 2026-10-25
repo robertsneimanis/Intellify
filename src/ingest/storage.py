@@ -76,6 +76,32 @@ def insert_raw(
     return conn.execute(sql, (vhost, routing_key, None, text.replace("\x00", ""))).fetchone()[0]
 
 
+def get_raw(conn: psycopg.Connection, raw_id: int) -> tuple[str, str, Any, str | None]:
+    """(vhost, routing_key, payload, payload_text) of a stored message; locks the row."""
+    row = conn.execute(
+        "SELECT vhost, routing_key, payload, payload_text FROM raw_messages"
+        " WHERE id = %s FOR UPDATE",
+        (raw_id,),
+    ).fetchone()
+    if row is None:
+        raise LookupError(f"raw message {raw_id} not found")
+    return row
+
+
+def raw_ids(conn: psycopg.Connection, status: str | None) -> list[int]:
+    """Ids of stored messages, oldest first, optionally only those with `status`."""
+    rows = conn.execute(
+        "SELECT id FROM raw_messages WHERE %(status)s::text IS NULL OR status = %(status)s"
+        " ORDER BY id",
+        {"status": status},
+    )
+    return [r[0] for r in rows]
+
+
+def delete_measurements_of(conn: psycopg.Connection, raw_id: int) -> None:
+    conn.execute("DELETE FROM measurements WHERE raw_message_id = %s", (raw_id,))
+
+
 def finish_raw(conn: psycopg.Connection, raw_id: int, status: str, errors: list[str]) -> None:
     conn.execute(
         "UPDATE raw_messages SET status = %s, errors = %s, processed_at = now() WHERE id = %s",
