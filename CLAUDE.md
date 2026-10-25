@@ -4,10 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This is a technical assignment (in Latvian). The repo holds the spec (`Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`), sample device payloads (`*_piemēri.json`), the dev infrastructure (`docker-compose.yml`, `broker/`) and the initial DB schema (`db/migrations/001_init.sql`). No Python code exists yet. There are no build, lint or test commands yet. Add them here once the project has them.
+This is a technical assignment (in Latvian). The repo holds the spec (`Tehniskais uzdevums_ Iekārtu datu apstrāde caur MQTT protokolu2.txt`), sample device payloads (`*_piemēri.json`), the dev infrastructure (`docker-compose.yml`, `broker/`) and the initial DB schema (`db/migrations/001_init.sql`). Python code so far: the package skeleton and the three format parsers (`src/ingest/parsers/`) with tests. Device modules, validation, storage and the consumer are not built yet.
 
 ## Commands
 
+- `python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev]'`: sets up the dev environment.
+- `.venv/bin/pytest`: runs the tests. Run a single one with `.venv/bin/pytest tests/parsers/test_wago.py::test_electric_meter`.
+- `.venv/bin/ruff check . && .venv/bin/ruff format --check .`: lint and format check.
 - `cp .env.example .env && docker compose up -d --wait`: starts RabbitMQ (AMQP 5672, MQTT 1883, management UI http://localhost:15672) and Postgres 17 (5432). Credentials come from `.env` and default to `admin/admin` and `ingest/ingest` with database `telemetry`.
 - SQL files in `db/migrations/` run automatically **only on first start** of an empty Postgres volume. To re-apply them, run `docker compose down -v`, which wipes all data. To apply a new file to a running DB: `docker compose exec -T postgres psql -U ingest -d telemetry -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/<file>.sql`.
 - The `metrics` catalog is not seeded by SQL. It is meant to be synced from the Python `devices/` modules at service start, so a new device stays a single new module.
@@ -58,7 +61,7 @@ This plan has been agreed but not built yet. Update this section as the code lan
 - `docs/data-model.md` and `docs/quality-criteria.md`: these document what each data point means and the validity rules, both required by the spec.
 - `docker-compose.yml` runs RabbitMQ and Postgres for dev. `ecosystem.config.js` (PM2) and a systemd unit handle auto-start.
 
-Parsers understand a wire format, and device modules define what fields *mean*. Keep the two separate: a new device on an existing format should only need a new `devices/` module.
+Parsers understand a wire format, and device modules define what fields *mean*. A parser has the signature `parse(payload, tz) -> ParsedMessage` (see `src/ingest/model.py`). It returns raw `Reading`s with timezone-aware timestamps and unscaled values, and raises `ParseError` to reject the whole message. Non-fatal problems go in `ParsedMessage.warnings`. Keep the two separate: a new device on an existing format should only need a new `devices/` module.
 
 ### Broker and isolation
 
